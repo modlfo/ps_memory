@@ -46,15 +46,30 @@ let sample (pid:int) : int =
    | _ -> String.trim !result |> int_of_string
 
 
+let writeSamples (samples:int list) : unit =
+   let oc = open_out "ps_memory.out" in
+   let rec iter l =
+      match l with
+      | []   -> ()
+      | [n]  -> Printf.fprintf oc "%i" n
+      | n::t ->
+         Printf.fprintf oc "%i, " n;
+         iter t
+   in
+   Printf.fprintf oc "{ ";
+   iter samples;
+   Printf.fprintf oc "}"
+
 let () =
    match Array.to_list Sys.argv with
    | _::cmd::args ->
       let pid = create cmd args in
-      let time = ref 0 in
+      let samples = ref [] in
       while isRunning pid do
          let current = sample pid in
-         print_endline (Printf.sprintf "- %i, %i" !time current);
-         incr time;
+         samples := current :: !samples;
          Unix.sleep 1
-      done
+      done;
+      writeSamples (List.rev !samples)
+
    | _ -> failwith "Invalid input"
